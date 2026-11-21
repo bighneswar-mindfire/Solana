@@ -23,6 +23,16 @@ Checked against Solana's public RPC (`getBlock`, `jsonParsed`) for blocks
 385870151–385870156: identical `from`, `to`, `amount` and `mint` in every
 block (3,974 transfers, 181 mints). See [Verify](#verify) to reproduce.
 
+## Setup
+
+- **Rust** with the WebAssembly target: install via [rustup](https://rustup.rs),
+  then `rustup target add wasm32-unknown-unknown`.
+- **Substreams CLI**: see [Substreams CLI on Windows](#substreams-cli-on-windows)
+  below; on Linux or macOS use the release binary.
+- **Node.js 18+** for the scripts in `scripts/`.
+- **API key**: run `substreams auth` (it writes `.substreams.env`, which is
+  git-ignored) or set `SUBSTREAMS_API_TOKEN`. Every `substreams run` needs it.
+
 ## Build
 
 ```
@@ -32,21 +42,24 @@ substreams pack substreams.yaml
 
 ## Run: one JSON object per transfer
 
+`transfers.jsonl` in this repo is the output for blocks 385870151–385870156 in
+the `--strict` format (exactly `from`, `to`, `amount`):
+
 ```
-node scripts/run.js 385870151 385870156 > transfers.jsonl
+node scripts/run.js --strict 385870151 385870156 > transfers.jsonl
 ```
 
-Both block numbers are inclusive. Each line is one transfer:
+Without `--strict`, each object also has a `mint` field. Both block numbers
+are inclusive. Each line is one transfer:
 
 ```
 {"from": "8ryouP8NbMv2EKL9V5xiAq5EEt5hKwnT9DDZHjqgTTWR", "to": "DduRAGKHQ5AN1BR3HGUW7ymL8MrTao7sQwZyoYCeSU69", "amount": 2829556537, "mint": "So11111111111111111111111111111111111111112"}
 ```
 
-Add `--strict` to leave out `mint` and get exactly the assignment's
-`{"from", "to", "amount"}` format:
+With `--strict`, `mint` is left out:
 
 ```
-node scripts/run.js --strict 385870151 385870156 > transfers.jsonl
+{"from": "8ryouP8NbMv2EKL9V5xiAq5EEt5hKwnT9DDZHjqgTTWR", "to": "DduRAGKHQ5AN1BR3HGUW7ymL8MrTao7sQwZyoYCeSU69", "amount": 2829556537}
 ```
 
 A Substreams map module emits one message per block, so `map_transfers`
@@ -80,8 +93,16 @@ instructions, lookup-table accounts and failed-transaction filtering are
 checked independently. Owners and mints come from the same transaction records
 the module uses, so that part checks the module reads them correctly.
 
-The API key is read from `.substreams.env` (written by `substreams auth`) or
-`SUBSTREAMS_API_TOKEN`.
+## Limitations
+
+- **Wrapped SOL:** a native SOL transfer into a wrapped-SOL token account is
+  reported with that token account as `to`, not its owner. That is what the
+  System Program instruction contains, and it matches the RPC.
+- **Unknown mint:** if a transaction carries no record of a token account's
+  mint, `mint` is `null` (none occur in blocks 385870151–385870156).
+- **Other transfer types:** only the instructions in the table above are
+  extracted. Other ways of moving value (for example Token-2022 confidential
+  transfers) are not.
 
 ## Substreams CLI on Windows
 
