@@ -1,0 +1,17 @@
+syntax = "proto3";
+
+package solana.transfers.v1;
+
+message Transfers {
+  repeated Transfer transfers = 1;
+}
+
+message Transfer {
+  string from = 1;
+  string to = 2;
+  // Smallest units of `mint` (lamports for SOL).
+  uint64 amount = 3;
+  // Token mint the amount is denominated in. Native SOL transfers use the
+  // SOL mint So11111111111111111111111111111111111111112.
+  string mint = 4;
+}

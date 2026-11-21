@@ -1,0 +1,30 @@
+specVersion: v0.1.0
+package:
+  name: solana_transfers
+  version: v0.1.0
+  url: https://github.com/bighneswar-mindfire/Solana
+  description: Extracts SOL and SPL token transfers (from, to, amount) from Solana blocks.
+
+network: solana
+
+imports:
+  solana: https://spkg.io/streamingfast/solana-common-v0.3.0.spkg
+
+protobuf:
+  files:
+    - transfers.proto
+  importPaths:
+    - ./proto
+
+binaries:
+  default:
+    type: wasm/rust-v1
+    file: ./target/wasm32-unknown-unknown/release/solana_transfers.wasm
+
+modules:
+  - name: map_transfers
+    kind: map
+    inputs:
+      - source: sf.solana.type.v1.Block
+    output:
+      type: proto:solana.transfers.v1.Transfers
